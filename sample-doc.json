@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.2",
+  "description": "Run a command",
+  "runtimeConfig": {
+    "aws:runShellScript": {
+      "properties": [
+        {
+          "runCommand": ["ls /"]
+        }
+      ]
+    }
+  }
+}

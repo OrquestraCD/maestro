@@ -1,0 +1,26 @@
+# circle.yml inspired by https://github.com/docker/libchan
+machine:
+  pre:
+    - curl -o go.tar.gz -sL https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz
+    - sudo rm -rf /usr/local/go
+    - sudo tar -C /usr/local -xzf go.tar.gz
+    - sudo chmod a+w /usr/local/go/src/
+
+dependencies:
+  pre:
+    - sudo apt-get update -y;sudo apt-get install -y pandoc
+  post:
+    - go get github.com/axw/gocov/gocov
+    - go get github.com/mattn/goveralls
+    - go get github.com/golang/lint/golint
+    - go get github.com/jarosser06/s3artifact
+
+test:
+  pre:
+    - go version
+  override:
+    - make build
+    - make test
+  post:
+    - make circleci_package
+    - gocov test $(go list ./... | grep -v /vendor/) 1>/dev/null

@@ -1,0 +1,7 @@
+- schema_version: 0
+- type: prototype
+- description: "Tool to improve SSM workflows and make it easier to work with EC2."
+- keywords
+  - go
+  - ssm
+  - aws
