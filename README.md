@@ -17,7 +17,7 @@ The latest build off the master branch:
 
 * [Windows](https://maestro.rax.io/latest/maestro-windows.zip)
 * [Linux](https://maestro.rax.io/latest/maestro-linux.zip)
-* [OSX](https://maestro.rax.io/latest/maestro-osx.zip)
+* [OSX](https://maestro.rax.io/latest/maestro-darwin.zip)
 
 ### Commands
 #### create
