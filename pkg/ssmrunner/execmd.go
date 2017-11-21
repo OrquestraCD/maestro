@@ -154,11 +154,15 @@ func getOutputPaths(bucket, originalKey string, session *session.Session) ([]str
 }
 
 // Given an S3 URL return the bucket name and key
-func getBucketInfo(url string) (string, string) {
+func getBucketInfo(url string) (string, string, error) {
 	re := regexp.MustCompile(S3UrlRegex)
 	result := re.FindStringSubmatch(url)
 
-	return result[2], result[3]
+	if len(result) < 3 {
+		return "", "", fmt.Errorf("invalid bucket url %s", url)
+	}
+
+	return result[2], result[3], nil
 }
 
 // Poll the executedcommand to get the output
@@ -205,12 +209,32 @@ func (e *ExecutedCommand) Poll(ctx context.Context, awsSess *session.Session, ou
 				cmdOutput.CommandLog = aws.StringValue(resp.StandardOutputContent)
 
 				stdoutResp := aws.StringValue(resp.StandardOutputUrl)
+				var bucketInfoErr error
+
 				if stdoutResp != "" {
-					bucket, originalPath = getBucketInfo(stdoutResp)
+					bucket, originalPath, bucketInfoErr = getBucketInfo(stdoutResp)
+					if bucketInfoErr != nil {
+						execErr := ExecutionError{
+							OriginalError: bucketInfoErr,
+							InstanceID:    e.InstanceID,
+							CommandID:     e.CommandID,
+						}
+						err <- execErr
+						return
+					}
 				} else {
 					stderrResp := aws.StringValue(resp.StandardErrorUrl)
 					if stderrResp != "" {
-						bucket, originalPath = getBucketInfo(stderrResp)
+						bucket, originalPath, bucketInfoErr = getBucketInfo(stderrResp)
+					}
+					if bucketInfoErr != nil {
+						execErr := ExecutionError{
+							OriginalError: bucketInfoErr,
+							InstanceID:    e.InstanceID,
+							CommandID:     e.CommandID,
+						}
+						err <- execErr
+						return
 					}
 				}
 
