@@ -18,7 +18,7 @@ import (
 const (
 	OutputS3KeyPrefix = `[a-zA-Z0-9]+\/i-[a-zA-Z0-9]+\/[a-zA-Z0-9\.]+\/[a-zA-Z0-9\.]+\/`
 	PollInterval      = 30
-	S3UrlRegex        = `^https:\/\/s3(\-[a-z]+\-[a-z]+\-[0-9])?.amazonaws.com\/([a-zA-Z\-\_0-9]+)\/([a-zA-Z\-\_\/0-9\.\%]+)$`
+	S3UrlRegex        = `^https:\/\/s3(\.|\-)([a-z]+\-[a-z]+\-[0-9])?.amazonaws.com\/([a-zA-Z\-\_0-9]+)\/([a-zA-Z\-\_\/0-9\.\%]+)$`
 )
 
 type ExecutionError struct {
@@ -158,7 +158,7 @@ func getBucketInfo(url string) (string, string) {
 	re := regexp.MustCompile(S3UrlRegex)
 	result := re.FindStringSubmatch(url)
 
-	return result[2], result[3]
+	return result[3], result[4]
 }
 
 // Poll the executedcommand to get the output
