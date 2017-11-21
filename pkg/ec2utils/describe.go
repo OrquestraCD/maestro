@@ -20,13 +20,22 @@ type Instance struct {
 func genSSMFilters(filters string) ([]*ssm.InstanceInformationStringFilter, error) {
 	filtersList := strings.Split(filters, ",")
 
-	ssmFilters := make([]*ssm.InstanceInformationStringFilter, len(filtersList))
-	i := 0
+	ssmFilters := make([]*ssm.InstanceInformationStringFilter, len(filtersList)+1)
+	ssmFilters[0] = &ssm.InstanceInformationStringFilter{
+		Key:    aws.String("PingStatus"),
+		Values: []*string{aws.String("Online")},
+	}
+
+	i := 1
 	for _, filter := range filtersList {
 		filterInfo := strings.Split(filter, "=")
 
 		if len(filterInfo) != 2 {
 			return ssmFilters, fmt.Errorf("Invalid filter \"%s\", exect Key=Value", filter)
+		}
+
+		if filterInfo[0] == "PingStatus" {
+			return ssmFilters, fmt.Errorf("PingStatus is static filter, cannot be altererd")
 		}
 
 		ssmFilters[i] = &ssm.InstanceInformationStringFilter{

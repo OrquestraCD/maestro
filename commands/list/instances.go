@@ -33,7 +33,6 @@ func listInstancesCli(c *cli.Context) error {
 	}
 
 	UI.Debugf("DescribeInstances response: %+v\n", instances)
-
 	// If List flag is set then print a comma delimited list of instances
 	if c.Bool("list") {
 		instanceIDs := make([]string, len(instances))
