@@ -17,13 +17,22 @@ type Instance struct {
 	SSMInformation ssm.InstanceInformation
 }
 
+// Return SSM filters to be used in DescribeInstances if filters string
+// is empty then only return static filter PingStatus.
 func genSSMFilters(filters string) ([]*ssm.InstanceInformationStringFilter, error) {
-	filtersList := strings.Split(filters, ",")
+	var filtersList []string
+	if filters != "" {
+		filtersList = strings.Split(filters, ",")
+	}
 
 	ssmFilters := make([]*ssm.InstanceInformationStringFilter, len(filtersList)+1)
 	ssmFilters[0] = &ssm.InstanceInformationStringFilter{
 		Key:    aws.String("PingStatus"),
 		Values: []*string{aws.String("Online")},
+	}
+
+	if len(filtersList) == 0 {
+		return ssmFilters, nil
 	}
 
 	i := 1
@@ -57,11 +66,9 @@ func DescribeInstances(session *session.Session, ssmFilters string) ([]Instance,
 	ssmSvc := ssm.New(session)
 
 	ssmInput := ssm.DescribeInstanceInformationInput{}
-	if len(ssmFilters) > 0 {
-		ssmInput.Filters, err = genSSMFilters(ssmFilters)
-		if err != nil {
-			return results, err
-		}
+	ssmInput.Filters, err = genSSMFilters(ssmFilters)
+	if err != nil {
+		return results, err
 	}
 
 	instanceIDs := make([]*string, 0)
