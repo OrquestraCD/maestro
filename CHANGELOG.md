@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Fix regression around output Bucket information extraction via
+  regex.
+
 ## 0.1.1
 
 - Fix bug where running in certain regions would panic due to

@@ -8,9 +8,9 @@ currently in heavy development.
 
 ### Install
 #### Stable
-* [Windows](https://maestro.rax.io/v0.1.1/maestro-windows.zip)
-* [Linux](https://maestro.rax.io/v0.1.1/maestro-linux.zip)
-* [OSX](https://maestro.rax.io/v0.1.1/maestro-darwin.zip)
+* [Windows](https://maestro.rax.io/v0.1.2/maestro-windows.zip)
+* [Linux](https://maestro.rax.io/v0.1.2/maestro-linux.zip)
+* [OSX](https://maestro.rax.io/v0.1.2/maestro-darwin.zip)
 
 #### Latest
 The latest build off the master branch:
