@@ -17,13 +17,11 @@ import (
 	. "github.com/rackerlabs/maestro/ui"
 )
 
-// Generate a new SSM Document given a specific command and run
-func createAndRunCommand(cmd []string, c *cli.Context) error {
-
+func newSSMCommandCustomDocument(cmd []string, c *cli.Context) (*ssmrunner.SSMCommand, error) {
 	// Generate new SSM document with command
 	doc, err := ssmdoc.NewDocument("Temporary Command Document")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	platform := c.String("platform")
@@ -31,7 +29,7 @@ func createAndRunCommand(cmd []string, c *cli.Context) error {
 		// Attempt to detect the platform if one is not set
 		platform, err = detectPlatform(c)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -49,7 +47,7 @@ func createAndRunCommand(cmd []string, c *cli.Context) error {
 
 		err := doc.AddStep(runPowerShell)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	case "Linux":
 		UI.Debug("Platform Linux selected")
@@ -64,15 +62,15 @@ func createAndRunCommand(cmd []string, c *cli.Context) error {
 
 		err := doc.AddStep(runShell)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	default:
-		return fmt.Errorf("Invalid platform %s\n", platform)
+		return nil, fmt.Errorf("Invalid platform %s\n", platform)
 	}
 
 	document, err := doc.String()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	UI.Debugf("Document created: %s\n", document)
 
@@ -90,6 +88,63 @@ func createAndRunCommand(cmd []string, c *cli.Context) error {
 		Parameters: map[string]string{},
 		Session:    sess,
 		Name:       docName,
+	}
+
+	return &command, nil
+}
+
+func newSSMCommandExistingDocument(cmd []string, c *cli.Context) (*ssmrunner.SSMCommand, error) {
+	platform := c.String("platform")
+	var err error
+	if platform == "" {
+		// Attempt to detect the platform if one is not set
+		platform, err = detectPlatform(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var documentName string
+	switch platform {
+	case "Windows":
+		UI.Debug("Platform Windows selected")
+		documentName = "AWS-RunPowerShellScript"
+	case "Linux":
+		UI.Debug("Platform Linux selected")
+		documentName = "AWS-RunShellScript"
+	default:
+		return nil, fmt.Errorf("Invalid platform %s\n", platform)
+	}
+
+	sess := middleware.GetSession(c)
+	// Create the Command and initialize the environment
+	command := ssmrunner.SSMCommand{
+		BucketName: c.String("bucket-name"),
+		Parameters: map[string]string{
+			"commands": strings.Join(cmd, "\n"),
+		},
+		Session: sess,
+		Name:    documentName,
+	}
+
+	return &command, nil
+}
+
+// Generate a new SSM Document given a specific command and run
+func createAndRunCommand(cmd []string, c *cli.Context, customDocument bool) error {
+
+	var command *ssmrunner.SSMCommand
+	var err error
+	if customDocument {
+		command, err = newSSMCommandCustomDocument(cmd, c)
+		if err != nil {
+			return err
+		}
+	} else {
+		command, err = newSSMCommandExistingDocument(cmd, c)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := command.Init(); err != nil {
@@ -122,6 +177,8 @@ func createAndRunCommand(cmd []string, c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	sess := middleware.GetSession(c)
 
 	output := make(chan ssmrunner.CommandOutput, len(executions)+1)
 	if err := ssmrunner.PollExecutedCommands(context.Background(), sess, executions, output); err != nil {
@@ -159,7 +216,7 @@ func runShellCommand(c *cli.Context) error {
 
 	UI.Debugf("Running command \"%s\"\n", cmd)
 
-	return createAndRunCommand(cmd, c)
+	return createAndRunCommand(cmd, c, false)
 }
 
 // Execute a script against n instances with SSM
@@ -170,5 +227,5 @@ func runShellScript(c *cli.Context) error {
 	}
 	ssmRunCommands := scripts.ScriptToSSMCommands(scr)
 
-	return createAndRunCommand(ssmRunCommands, c)
+	return createAndRunCommand(ssmRunCommands, c, true)
 }
